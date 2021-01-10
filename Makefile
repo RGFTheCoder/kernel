@@ -7,7 +7,7 @@ LDS = kernel.ld
 CC = g++
 LD = ld
 
-CFLAGS = -ffreestanding -fshort-wchar -I./include
+CFLAGS = -ffreestanding -fshort-wchar -I./include --std=c++2a
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 
 SRCDIR := src
@@ -21,7 +21,8 @@ SRC = $(call rwildcard,$(SRCDIR),*.cc)
 OBJS = $(patsubst $(SRCDIR)/%.cc, $(OBJDIR)/%.o, $(SRC))
 DIRS = $(wildcard $(SRCDIR)/*)
 
-kernel: $(OBJS) link
+kernel: $(OBJS) 
+	@$(MAKE) -j1 link
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cc
 	@echo Compiling $^
@@ -43,9 +44,13 @@ clean:
 	rm -f $(BUILDDIR)/kernel.elf
 
 buildefi: 
-	@cd ../gnu-efi && make bootloader && cd ../kernel
+	@cd ../gnu-efi && $(MAKE) bootloader && cd ../kernel
 
-fullBuild: clean buildefi kernel buildimg
+fullBuild: 
+	@$(MAKE) -j1 clean 
+	@$(MAKE) -j1 buildefi 
+	@$(MAKE) -j4 kernel 
+	@$(MAKE) -j1 buildimg
 
 buildimg:
 	dd if=/dev/zero of=$(BUILDDIR)/$(OSNAME).img bs=512 count=93750

@@ -1,14 +1,14 @@
 #pragma once
 
-typedef unsigned long long size_t;
-typedef unsigned int uint;
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
-typedef unsigned long ul;
-typedef unsigned long long u64;
-typedef char i8;
-typedef short i16;
-typedef int i32;
-typedef long il;
-typedef long long i64;
+using size_t = unsigned long long;
+using uint = unsigned int;
+using u8 = unsigned char;
+using u16 = unsigned short;
+using u32 = unsigned int;
+using ul = unsigned long;
+using u64 = unsigned long long;
+using i8 = char;
+using i16 = short;
+using i32 = int;
+using il = long;
+using i64 = long long;
