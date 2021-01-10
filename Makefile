@@ -47,10 +47,10 @@ buildefi:
 	@cd ../gnu-efi && $(MAKE) bootloader && cd ../kernel
 
 fullBuild: 
-	@$(MAKE) -j1 clean 
-	@$(MAKE) -j1 buildefi 
-	@$(MAKE) -j4 kernel 
-	@$(MAKE) -j1 buildimg
+	@$(MAKE) clean 
+	@$(MAKE) buildefi 
+	@$(MAKE) kernel 
+	@$(MAKE) buildimg
 
 buildimg:
 	dd if=/dev/zero of=$(BUILDDIR)/$(OSNAME).img bs=512 count=93750
@@ -63,4 +63,4 @@ buildimg:
 	mcopy -i $(BUILDDIR)/$(OSNAME).img $(BUILDDIR)/zap-light16.psf ::
 
 run:
-	qemu-system-x86_64 -drive file=$(BUILDDIR)/$(OSNAME).img -m 256M -cpu qemu64 -drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE-pure-efi.fd",readonly=on -drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd" -net none
+	qemu-system-x86_64 -drive file=$(BUILDDIR)/$(OSNAME).img -m 1G -cpu qemu64 -drive if=pflash,format=raw,unit=0,file="$(OVMFDIR)/OVMF_CODE-pure-efi.fd",readonly=on -drive if=pflash,format=raw,unit=1,file="$(OVMFDIR)/OVMF_VARS-pure-efi.fd" -net none
