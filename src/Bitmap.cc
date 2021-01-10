@@ -2,17 +2,23 @@
 
 bool Bitmap::operator[](size_t i) const
 {
-	size_t byte = i >> 3;
+	size_t byteIndex = i >> 3;
 	u8 bitIndex = i & 0b111;
-	return (buffer[byte] >> bitIndex) & 1;
+	u8 bitIndexer = 0b10000000 >> bitIndex;
+	if ((buffer[byteIndex] & bitIndexer) > 0)
+	{
+		return true;
+	}
+	return false;
 }
 void Bitmap::set(size_t i, bool value)
 {
-
-	size_t byte = i >> 3;
+	size_t byteIndex = i >> 3;
 	u8 bitIndex = i & 0b111;
-	u8 bitIndexer = 1 << bitIndex;
-	buffer[byte] &= ~bitIndexer;
+	u8 bitIndexer = 0b10000000 >> bitIndex;
+	buffer[byteIndex] &= ~bitIndexer;
 	if (value)
-		buffer[byte] |= bitIndexer;
+	{
+		buffer[byteIndex] |= bitIndexer;
+	}
 }

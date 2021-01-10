@@ -18,36 +18,28 @@ void PageFrameAllocator::ReadEFIMemoryMap(EFI_MEMORY_DESCRIPTOR *mMap, size_t mM
 	{
 		EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((u64)mMap + (i * mMapDescSize));
 		if (desc->type == 7)
-		{
-			//	type 7 is conventional
-			if (desc->numPages << 12 > largestFreeMemSegSize)
+		{ // type = EfiConventionalMemory
+			if (desc->numPages * 4096 > largestFreeMemSegSize)
 			{
 				largestFreeMemSeg = desc->physAddr;
-				largestFreeMemSegSize = desc->numPages << 12;
+				largestFreeMemSegSize = desc->numPages * 4096;
 			}
 		}
 	}
 
 	u64 memorySize = GetMemorySize(mMap, mMapEntries, mMapDescSize);
 	freeMemory = memorySize;
-
 	u64 bitmapSize = memorySize / 4096 / 8 + 1;
 
-	//	Initialize Bitmap
 	InitBitmap(bitmapSize, largestFreeMemSeg);
 
-	//	lock bitmap pages
-
-	LockPages(PageBitmap.buffer, PageBitmap.size >> 12 + 1);
-	LockPages(&PageBitmap, sizeof(Bitmap) >> 12 + 1);
-
-	//	reserve unusable pages
+	LockPages(&PageBitmap, PageBitmap.size / 4096 + 1);
 
 	for (int i = 0; i < mMapEntries; i++)
 	{
 		EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((u64)mMap + (i * mMapDescSize));
 		if (desc->type != 7)
-		{
+		{ // not efiConventionalMemory
 			ReservePages(desc->physAddr, desc->numPages);
 		}
 	}
@@ -131,12 +123,12 @@ void PageFrameAllocator::UnreservePages(void *address, u64 pageCount)
 
 void *PageFrameAllocator::requestPage()
 {
-	for (u64 i = 0; i < PageBitmap.size; i++)
+	for (u64 i = 0; i < PageBitmap.size * 8; i++)
 	{
 		if (!PageBitmap[i])
 		{
-			LockPage((void *)(i << 12));
-			return (void *)(i << 12);
+			LockPage((void *)(i * 4096));
+			return (void *)(i * 4096);
 		}
 	}
 

@@ -36,10 +36,13 @@ extern "C" void _start(BootInfo *bootinfo)
 	u64 kernelSize = (u64)&_KernelEnd - (u64)&_KernelStart;
 	u64 kernelPages = kernelSize >> 12 + 1;
 
+	out.print("Test\n\r");
 	globalAllocator.LockPages(&_KernelStart, kernelPages);
+	out.print("Test\n\r");
 
 	PageTable *PML4 = (PageTable *)globalAllocator.requestPage();
-	memset(PML4, 0, 0x1000);
+	// memset(PML4, 0, 0x1000);
+	out.print("Test\n\r");
 
 	PageTableManager pageTableManager{PML4};
 
