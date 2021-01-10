@@ -11,6 +11,7 @@
 #include <paging/PageMapIndexer.hh>
 #include <paging/paging.hh>
 #include <paging/PageTableManager.hh>
+#include <gdt/gdt.hh>
 
 struct BootInfo
 {

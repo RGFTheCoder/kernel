@@ -5,9 +5,11 @@ GNUEFI = ../gnu-efi
 OVMFDIR = ../OVMFbin
 LDS = kernel.ld
 CC = g++
+ASMC = nasm
 LD = ld
 
 CFLAGS = -ffreestanding -fshort-wchar -I./include --std=c++2a 
+ASMFLAGS = 
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 
 SRCDIR := src
@@ -18,7 +20,9 @@ BOOTEFI := $(GNUEFI)/x86_64/bootloader/main.efi
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
 SRC = $(call rwildcard,$(SRCDIR),*.cc)          
+ASMSRC = $(call rwildcard,$(SRCDIR),*.asm)          
 OBJS = $(patsubst $(SRCDIR)/%.cc, $(OBJDIR)/%.o, $(SRC))
+OBJS += $(patsubst $(SRCDIR)/%.asm, $(OBJDIR)/%.asm.o, $(ASMSRC))
 DIRS = $(wildcard $(SRCDIR)/*)
 
 kernel: $(OBJS) 
@@ -28,6 +32,11 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cc
 	@echo Compiling $^
 	@mkdir -p $(@D)
 	@$(CC) $(CFLAGS) -c $^ -o $@
+
+$(OBJDIR)/%.asm.o: $(SRCDIR)/%.asm
+	@echo Compiling $^
+	@mkdir -p $(@D)
+	@$(ASMC) $(ASMFLAGS) $^ -f elf64 -o $@
 
 setup:
 	@mkdir $(BUILDDIR)
