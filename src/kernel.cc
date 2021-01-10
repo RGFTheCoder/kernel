@@ -6,6 +6,10 @@
 #include <cstr.hh>
 #include <Memory.hh>
 #include <Bitmap.hh>
+#include <paging/PageFrameAllocator.hh>
+#include <paging/PageMapIndexer.hh>
+#include <paging/paging.hh>
+#include <paging/PageTableManager.hh>
 
 struct BootInfo
 {
@@ -18,24 +22,42 @@ struct BootInfo
 
 u8 testbuffer[20];
 
-extern "C" void _start(BootInfo *p_bootinfo)
+extern u64 _KernelStart;
+extern u64 _KernelEnd;
+
+extern "C" void _start(BootInfo *bootinfo)
 {
-	BasicRenderer out{p_bootinfo->framebuffer, p_bootinfo->font};
+	BasicRenderer out{bootinfo->framebuffer, bootinfo->font};
 
-	out.cursorPosition.y = 16;
+	u64 mMapEntries = bootinfo->mMapSize / bootinfo->mMapDescSize;
 
-	u64 mMapEntries = p_bootinfo->mMapSize / p_bootinfo->mMapDescSize;
+	globalAllocator.ReadEFIMemoryMap(bootinfo->mMap, bootinfo->mMapSize, bootinfo->mMapDescSize);
 
-	Bitmap testBitmap;
-	testBitmap.Buffer = testbuffer;
-	testBitmap.set(0, false);
-	testBitmap.set(1, true);
-	testBitmap.set(2, false);
-	testBitmap.set(3, false);
-	testBitmap.set(4, true);
+	u64 kernelSize = (u64)&_KernelEnd - (u64)&_KernelStart;
+	u64 kernelPages = kernelSize >> 12 + 1;
 
-	for (int i = 0; i < 20; i++)
+	globalAllocator.LockPages(&_KernelStart, kernelPages);
+
+	PageTable *PML4 = (PageTable *)globalAllocator.requestPage();
+	memset(PML4, 0, 0x1000);
+
+	PageTableManager pageTableManager{PML4};
+
+	for (u64 t = 0; t < GetMemorySize(bootinfo->mMap, mMapEntries, bootinfo->mMapDescSize); t += 0x1000)
 	{
-		out.print(testBitmap[i] ? "true\n\r" : "false\n\r");
+		pageTableManager.MapMemory((void *)t, (void *)t);
 	}
+
+	u64 fbBase = (u64)bootinfo->framebuffer->BaseAddress;
+	u64 fbSize = (u64)bootinfo->framebuffer->BufferSize;
+	for (u64 t = fbBase; t < fbBase + fbSize; t += 0x1000)
+	{
+		pageTableManager.MapMemory((void *)t, (void *)t);
+	}
+
+	asm("mov %0, %%cr3"
+			:
+			: "r"(PML4));
+
+	out.print("Test\n\r");
 }

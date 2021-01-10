@@ -7,7 +7,7 @@ LDS = kernel.ld
 CC = g++
 LD = ld
 
-CFLAGS = -ffreestanding -fshort-wchar -I./include --std=c++2a
+CFLAGS = -ffreestanding -fshort-wchar -I./include --std=c++2a 
 LDFLAGS = -T $(LDS) -static -Bsymbolic -nostdlib
 
 SRCDIR := src
