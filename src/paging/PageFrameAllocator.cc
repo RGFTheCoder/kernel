@@ -33,7 +33,9 @@ void PageFrameAllocator::ReadEFIMemoryMap(EFI_MEMORY_DESCRIPTOR *mMap, size_t mM
 
 	InitBitmap(bitmapSize, largestFreeMemSeg);
 
-	LockPages(&PageBitmap, PageBitmap.size / 4096 + 1);
+	// LockPages(&PageBitmap, PageBitmap.size / 4096 + 1);
+	LockPages(PageBitmap.buffer, PageBitmap.size / 4096 + 1);
+	LockPages(&PageBitmap, sizeof(PageBitmap) / 4096 + 1);
 
 	for (int i = 0; i < mMapEntries; i++)
 	{
@@ -55,41 +57,68 @@ void PageFrameAllocator::InitBitmap(size_t bitmapSize, void *bufferAddress)
 	}
 }
 
+u64 pageBitmapIndex = 0;
+void *PageFrameAllocator::requestPage()
+{
+	for (; pageBitmapIndex < PageBitmap.size * 8; pageBitmapIndex++)
+	{
+		if (!PageBitmap[pageBitmapIndex])
+		{
+			LockPage((void *)(pageBitmapIndex * 4096));
+			return (void *)(pageBitmapIndex * 4096);
+		}
+	}
+
+	return (void *)0xdeadbeef; // TODO: PageFrame swap to file
+}
+
 void PageFrameAllocator::FreePage(void *address)
 {
 	u64 index = (u64)address >> 12;
 	if (!PageBitmap[index])
 		return;
-	PageBitmap.set(index, false);
-	freeMemory += 1 << 12;
-	usedMemory -= 1 << 12;
+	if (PageBitmap.set(index, false))
+	{
+		if (pageBitmapIndex > index)
+			pageBitmapIndex = index;
+		freeMemory += 4096;
+		usedMemory -= 4096;
+	}
 }
 void PageFrameAllocator::LockPage(void *address)
 {
 	u64 index = (u64)address >> 12;
 	if (PageBitmap[index])
 		return;
-	PageBitmap.set(index, true);
-	freeMemory -= 1 << 12;
-	usedMemory += 1 << 12;
+	if (PageBitmap.set(index, true))
+	{
+		freeMemory -= 4096;
+		usedMemory += 4096;
+	}
 }
 void PageFrameAllocator::ReservePage(void *address)
 {
 	u64 index = (u64)address >> 12;
-	if (!PageBitmap[index])
+	if (PageBitmap[index])
 		return;
-	PageBitmap.set(index, true);
-	freeMemory -= 1 << 12;
-	reservedMemory += 1 << 12;
+	if (PageBitmap.set(index, true))
+	{
+		freeMemory -= 4096;
+		reservedMemory += 4096;
+	}
 }
 void PageFrameAllocator::UnreservePage(void *address)
 {
 	u64 index = (u64)address >> 12;
-	if (PageBitmap[index])
+	if (!PageBitmap[index])
 		return;
-	PageBitmap.set(index, false);
-	freeMemory += 1 << 12;
-	reservedMemory -= 1 << 12;
+	if (PageBitmap.set(index, false))
+	{
+		if (pageBitmapIndex > index)
+			pageBitmapIndex = index;
+		freeMemory += 4096;
+		reservedMemory -= 4096;
+	}
 }
 
 void PageFrameAllocator::FreePages(void *address, u64 pageCount)
@@ -119,18 +148,4 @@ void PageFrameAllocator::UnreservePages(void *address, u64 pageCount)
 	{
 		UnreservePage((void *)((u64)address + (t << 12)));
 	}
-}
-
-void *PageFrameAllocator::requestPage()
-{
-	for (u64 i = 0; i < PageBitmap.size * 8; i++)
-	{
-		if (!PageBitmap[i])
-		{
-			LockPage((void *)(i * 4096));
-			return (void *)(i * 4096);
-		}
-	}
-
-	return 0; // TODO: PageFrame swap to file
 }

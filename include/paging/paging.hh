@@ -1,19 +1,28 @@
 #pragma once
 #include <types/ints.hh>
 
+enum class PT_FLAG
+{
+	present = 0,
+	readWrite,
+	userSuper,
+	writeThrough,
+	cacheDisabled,
+	accessed,
+	largerPages = 7,
+	custom0 = 9,
+	custom1,
+	custom2,
+	NX = 63
+};
+
 struct PageDirectoryEntry
 {
-	bool present : 1;
-	bool readWrite : 1;
-	bool userSuper : 1;
-	bool writeThrough : 1;
-	bool cacheDisabled : 1;
-	bool accessed : 1;
-	bool ignore0 : 1;
-	bool largerPages : 1;
-	bool ignore1 : 1;
-	u8 available : 3;
-	u64 address : 52;
+	u64 value;
+	void SetFlag(PT_FLAG flag, bool enabled);
+	bool GetFlag(PT_FLAG flag);
+	void SetAddress(u64 address);
+	u64 GetAddress();
 };
 
 struct PageTable
