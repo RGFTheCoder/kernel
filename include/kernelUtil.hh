@@ -12,6 +12,8 @@
 #include <paging/paging.hh>
 #include <paging/PageTableManager.hh>
 #include <gdt/gdt.hh>
+#include <interrupts/IDT.hh>
+#include <interrupts/interrupts.hh>
 
 struct BootInfo
 {

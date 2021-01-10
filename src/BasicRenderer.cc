@@ -1,5 +1,7 @@
 #include <BasicRenderer.hh>
 
+BasicRenderer *globalRenderer;
+
 void BasicRenderer::putchar(char chr, uint xOff, uint yOff)
 {
 	uint *pixPtr = framebuffer->BaseAddress;

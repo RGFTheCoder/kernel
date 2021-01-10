@@ -2,15 +2,14 @@
 
 extern "C" void _start(BootInfo *bootinfo)
 {
-	BasicRenderer out{bootinfo->framebuffer, bootinfo->font};
-	out.print("Kernel Initializing\n\r");
 
 	KernelInfo kernelInfo = InitializeKernel(bootinfo);
 	PageTableManager *pageTableManager = kernelInfo.pageTableManager;
 
-	out.print("Kernel Initialized Successfully\n\r");
+	globalRenderer->print("Kernel Initialized Successfully\n\r");
+
+	asm("int $0x0e");
 
 	while (true)
-	{
-	}
+		;
 }

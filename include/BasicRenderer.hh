@@ -22,3 +22,5 @@ public:
 	void putchar(char chr, uint xOff, uint yOff);
 	void print(const char *str);
 };
+
+extern BasicRenderer *globalRenderer;
